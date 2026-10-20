@@ -1225,13 +1225,14 @@ defmodule AshJsonApi.Serializer do
         inner_value
 
       config ->
-        serialize_value(
-          inner_value,
+        inner_value
+        |> serialize_value(
           Ash.Type.get_type(config[:type]),
           config[:constraints] || [],
           domain,
           opts
         )
+        |> put_union_tag(config)
     end
   end
 
@@ -1243,6 +1244,19 @@ defmodule AshJsonApi.Serializer do
       serialize_value(value, Ash.Type.Union, constraints, domain, opts)
     else
       do_serialize_value(value, type, constraints, domain, opts)
+    end
+  end
+
+  defp put_union_tag(serialized, config) do
+    tag = config[:tag]
+    tag_value = config[:tag_value]
+
+    if tag && !is_nil(tag_value) && is_map(serialized) do
+      serialized
+      |> Map.drop([tag, to_string(tag)])
+      |> Map.put(to_string(tag), tag_value)
+    else
+      serialized
     end
   end
 
